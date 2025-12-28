@@ -1,0 +1,80 @@
+---
+- name: Create Prometheus configuration directory
+  file:
+    path: /etc/prometheus
+    state: directory
+    mode: '0755'
+
+- name: Create default Prometheus config
+  copy:
+    dest: /etc/prometheus/prometheus.yml
+    content: |
+      global:
+        scrape_interval: 15s
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['localhost:9090']
+        - job_name: 'node_exporter'
+          static_configs:
+            - targets: ['node-exporter:9100']
+        - job_name: 'cadvisor'
+          static_configs:
+            - targets: ['cadvisor:8080']
+    mode: '0644'
+
+- name: Run Node Exporter
+  docker_container:
+    name: node-exporter
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)'
+    restart_policy: always
+    state: started
+
+- name: Run cAdvisor
+  docker_container:
+    name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8081:8080" # Maps host 8081 to container 8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    restart_policy: always
+    state: started
+
+- name: Run Prometheus Container
+  docker_container:
+    name: prometheus
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    # Link containers so Prometheus can reach them by name
+    links:
+      - node-exporter:node-exporter
+      - cadvisor:cadvisor
+    restart_policy: always
+    state: started
+
+- name: Run Grafana Container
+  docker_container:
+    name: grafana
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    restart_policy: always
+    state: started

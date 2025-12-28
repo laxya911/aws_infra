@@ -1,0 +1,56 @@
+---
+- name: Create Jenkins volume
+  docker_volume:
+    name: jenkins_home
+
+- name: Run Jenkins Container
+  docker_container:
+    name: jenkins
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart_policy: always
+    state: started
+
+- name: Install Docker CLI and SSH Client inside Jenkins
+  command: docker exec -u 0 jenkins sh -c "apt-get update && apt-get install -y docker.io openssh-client sshpass"
+  register: docker_install
+  changed_when: "'Reading package lists' in docker_install.stdout"
+
+- name: Grant Jenkins access to Docker socket
+  command: docker exec -u 0 jenkins chmod 666 /var/run/docker.sock
+  changed_when: false
+
+- name: Create Nexus volume
+  docker_volume:
+    name: nexus_data
+
+    volumes:
+      - nexus_data:/nexus-data
+    restart_policy: always
+    state: started
+
+- name: Install dependencies for Trivy
+  apt:
+    name:
+      - wget
+      - apt-transport-https
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Add Trivy GPG key
+  shell: wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+
+- name: Add Trivy repository
+  shell: echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+
+- name: Update apt and install Trivy
+  apt:
+    update_cache: yes
+    name: trivy
+    state: present

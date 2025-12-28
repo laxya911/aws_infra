@@ -1,0 +1,8 @@
+---
+- name: Check node role
+  debug:
+    msg: "Configuring worker node with role: {{ node_role | default('general') }}"
+
+- name: Include Monitoring tasks
+  include_tasks: monitoring.yml
+  when: node_role is defined and node_role == 'monitoring'
