@@ -52,7 +52,7 @@ cp "$INVENTORY_PATH" "${INVENTORY_PATH}.bak"
 # I should probably recreate a template or just write the content from scratch since I know the structure.
 # Writing from scratch is safer than complex sed if we know the target structure.
 
-KEY_FILE="../../Terraform/Environments/dev/ec2_key"
+KEY_FILE="../../secrets/ec2_key"
 
 cat > "$INVENTORY_PATH" <<EOF
 [master]

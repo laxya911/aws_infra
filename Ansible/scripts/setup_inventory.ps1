@@ -38,7 +38,7 @@ foreach ($line in $content) {
     if ($line -match "\[master\]") {
         $newContent += $line
         if ($masterIp) {
-            $newContent += "$masterIp ansible_user=ubuntu ansible_ssh_private_key_file=../Terraform/Environments/dev/ec2_key"
+            $newContent += "$masterIp ansible_user=ubuntu ansible_ssh_private_key_file=..\..\secrets\ec2_key"
         }
         $masterSet = $true
         continue
@@ -47,10 +47,10 @@ foreach ($line in $content) {
     if ($line -match "\[worker\]") {
         $newContent += $line
         if ($worker1Ip) {
-            $newContent += "$worker1Ip ansible_user=ubuntu ansible_ssh_private_key_file=../Terraform/Environments/dev/ec2_key node_role=general"
+            $newContent += "$worker1Ip ansible_user=ubuntu ansible_ssh_private_key_file=..\..\secrets\ec2_key node_role=general"
         }
         if ($worker2Ip) {
-             $newContent += "$worker2Ip ansible_user=ubuntu ansible_ssh_private_key_file=../Terraform/Environments/dev/ec2_key node_role=monitoring"
+             $newContent += "$worker2Ip ansible_user=ubuntu ansible_ssh_private_key_file=..\..\secrets\ec2_key node_role=monitoring"
         }
         $workerSet = $true
         continue

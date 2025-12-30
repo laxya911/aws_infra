@@ -43,7 +43,7 @@ variable "create_key_pair" {
 variable "public_key_file" {
   description = "Path to the public key file relative to this module"
   type        = string
-  default     = "ec2_key.pub"
+  default     = "../../../secrets/ec2_key.pub"
 }
 
 variable "instances" {
